@@ -12,8 +12,8 @@ int WriteSpaces(const char* name, size_t val);
 char *my_strdup(const char *s);
 int Compare_Straight(const void * ptr_a, const void * ptr_b);
 int Compare_Reverse(const void * ptr_a, const void * ptr_b);
+int Compare_to_Initial(const void * ptr_a, const void * ptr_b);
 int QuickSort(void* list, size_t num, size_t size, int (*compare)(const void *, const void *));
-//int compare_str(const void * ptr_a, const void * ptr_b);
 int ChangeValues(char* data, size_t value1, size_t value2, size_t size);
 char *my_strrev(char *str);
 
@@ -33,7 +33,6 @@ int main()
     size_t count = ReadFromFile(FILE_IN, index);
         
     qsort(index, count, sizeof(char*), Compare_Straight);
-    
     WriteToFile(FILE_OUT, (const char**)index, count, "w");
     
     WriteSpaces(FILE_OUT, SPACE);
@@ -41,9 +40,15 @@ int main()
     
     // reverse sorting//
     QuickSort(index, count, sizeof(char*), Compare_Reverse);
-    
     WriteToFile(FILE_OUT, (const char**)index, count, "a");
 
+    WriteSpaces(FILE_OUT, SPACE);
+
+    //initial text//
+    qsort(index, count, sizeof(char*), Compare_to_Initial);
+    WriteToFile(FILE_OUT, (const char**)index, count, "a");
+
+    //free buffer//
     for (size_t i = 0; i < count; i++)
     {
         index[i] = NULL;
@@ -83,35 +88,44 @@ int Compare_Reverse(const void * ptr_a, const void * ptr_b)
     assert(ptr_a != NULL);
     assert(ptr_b != NULL);
 
-    const char* pt_a = *(const char**)(ptr_a);
-    const char* pt_b = *(const char**)(ptr_b);
+    const char* start_a = *(const char**)(ptr_a);
+    const char* start_b = *(const char**)(ptr_b);
 
-    size_t len_a = strlen((const char*)pt_a);
-    size_t len_b = strlen((const char*)pt_b);
+    if (*start_a == '\0' || *start_b == '\0')
+        return (*start_a != '\0') - (*start_b != '\0');
 
-    pt_a += len_a - 1;
-    pt_b += len_b - 1;
+    size_t i_a = strlen(start_a) - 1;
+    size_t i_b = strlen(start_b) - 1;
 
-    printf("%p v %p\n", pt_a, pt_b);
-
-    while (*pt_a && *pt_b)
+    while (i_a >= 0 && i_b >= 0)
     {
-        while (*pt_a && !isalpha(*pt_a))
-            pt_a--;
-        while (pt_b && !isalpha(*pt_b))
-            pt_b--;
+        while (i_a >= 0 && !isalpha(start_a[i_a]))
+            i_a--;
+        while (i_b >= 0 && !isalpha(start_b[i_b]))
+            i_b--;
 
-        char a = tolower((char) *pt_a);
-        char b = tolower((char) *pt_b);
+        if (i_a < 0 || i_b < 0)
+            break;
+
+        char a = tolower((char) start_a[i_a]);
+        char b = tolower((char) start_b[i_b]);
 
         if (a != b)
             return (a - b);
 
-        pt_a--;
-        pt_b--;
+        i_a--;
+        i_b--;
     }
 
-    return (tolower((char) *pt_a) - tolower((char) *pt_b));
+    return i_a - i_b;
+}
+//-------------------------------------------------------------------------------------------------
+int Compare_to_Initial(const void * ptr_a, const void * ptr_b)
+{
+    const char** pt_a = (const char**)ptr_a;
+    const char** pt_b = (const char**)ptr_b;
+
+    return pt_a - pt_b;
 }
 //-------------------------------------------------------------------------------------------------
 int ReadFromFile(const char* name, char** index)
@@ -220,14 +234,6 @@ int QuickSort(void* list, size_t num, size_t size, int (*compare)(const void *, 
 
     return 0;
 }
-//---------------------------------------------------------------------------------
-// int compare_str(const void * ptr_a, const void * ptr_b)
-// {
-//     const char* pt_a = *(const char**)ptr_a;
-//     const char* pt_b = *(const char**)ptr_b;
-
-//     return (strcmp(pt_a, pt_b));
-// }
 //---------------------------------------------------------------------------------
 int ChangeValues(char* data, size_t value1, size_t value2, size_t size)
 {
