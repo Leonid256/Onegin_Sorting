@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <ctype.h>
 #include <assert.h>
+//#include <sys\stat.h>
 //-------------------------------------------------------------------------------------------------
 int ReadFromFile(const char* name, char** index);
 int WriteToFile(const char* name, const char** index, size_t count, const char* mode);
@@ -18,9 +19,9 @@ int ChangeValues(char* data, size_t value1, size_t value2, size_t size);
 char *my_strrev(char *str);
 
 //-------------------------------------------------------------------------------------------------
-const int BUFFER_SIZE = 1000;
-const int MAX_LINES = 10000;
-const int SPACE = 10;
+const size_t BUFFER_SIZE = 1000;
+const size_t MAX_LINES = 10000;
+const size_t SPACE = 10;
 const char FILE_IN[] = "/Users/leonid/Documents/GitHub/mipt_course/Onegin/Onegin.txt";
 const char FILE_OUT[] = "/Users/leonid/Documents/GitHub/mipt_course/Onegin/Res_Onegin.txt";
 
@@ -28,10 +29,14 @@ const char FILE_OUT[] = "/Users/leonid/Documents/GitHub/mipt_course/Onegin/Res_O
 //-------------------------------------------------------------------------------------------------
 int main()
 {
-    //strait sorting//
-    char* index[MAX_LINES] = {};
+    //struct stat file_info;
+    //stat(FILE_IN, &file_info);
+    
+    char** index = (char**)calloc(MAX_LINES, sizeof(char*));
+    //char* index[MAX_LINES] = {};
     size_t count = ReadFromFile(FILE_IN, index);
-        
+
+    //strait sorting//
     qsort(index, count, sizeof(char*), Compare_Straight);
     WriteToFile(FILE_OUT, (const char**)index, count, "w");
     
@@ -122,10 +127,11 @@ int Compare_Reverse(const void * ptr_a, const void * ptr_b)
 //-------------------------------------------------------------------------------------------------
 int Compare_to_Initial(const void * ptr_a, const void * ptr_b)
 {
-    const char** pt_a = (const char**)ptr_a;
-    const char** pt_b = (const char**)ptr_b;
-
-    return pt_a - pt_b;
+    if (*(const char*)ptr_a > *(const char*)ptr_b)
+        return 1;
+    if (*(const char*)ptr_a < *(const char*)ptr_b)
+        return -1;
+    return 0;
 }
 //-------------------------------------------------------------------------------------------------
 int ReadFromFile(const char* name, char** index)
@@ -138,10 +144,18 @@ int ReadFromFile(const char* name, char** index)
 
     while (!feof(file))
     {
+        //void* calloc(size_t num, size_t size);
+
+        //char* buffer = (char*)calloc(BUFFER_SIZE, sizeof(char));
         char buffer[BUFFER_SIZE] = "";
 
         fgets(buffer, BUFFER_SIZE, file);
+        if (buffer[0] == '\n')
+            continue;
+
         index[i++] = my_strdup(buffer);
+
+        //free(buffer);
     }
 
     fclose(file);
