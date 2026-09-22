@@ -20,12 +20,12 @@ char *my_strrev(char *str);
 void toxic_free(char** buffer);
 
 //-------------------------------------------------------------------------------------------------
-const size_t BUFFER_SIZE = 1000;
-const size_t MAX_LINES = 10000;
-const size_t SPACE = 10;
-const char FILE_IN[] = "/Users/leonid/Documents/GitHub/mipt_course/Onegin/Onegin.txt";
-const char FILE_OUT[] = "/Users/leonid/Documents/GitHub/mipt_course/Onegin/Res_Onegin.txt";
-const int POISON_VALUE = 13;
+//const size_t MAX_LINES    = 10000;
+const size_t   BUFFER_SIZE  = 1000;
+const size_t   SPACE        = 10;
+const char     FILE_IN[]    = "/Users/leonid/Documents/GitHub/mipt_course/Onegin/Onegin.txt";
+const char     FILE_OUT[]   = "/Users/leonid/Documents/GitHub/mipt_course/Onegin/Res_Onegin.txt";
+const int      POISON_VALUE = 13;
 
 //-------------------------------------------------------------------------------------------------
 int main()
@@ -41,7 +41,6 @@ int main()
 
     char** index = (char**)calloc(strings, sizeof(char*));
     count = Add_to_Index((const char**)index, (const char*)big_buffer, count);
-    //TODO: func to index from fread
 
     //strait sorting//
     qsort(index, count, sizeof(char*), Compare_Straight);
@@ -164,21 +163,6 @@ int ReadFromFile(const char* name, char* big_buffer, struct stat file_info)
     }
 
     return strings;
-
-    // while (!feof(file))
-    // {
-    //     char* buffer = (char*)calloc(BUFFER_SIZE, sizeof(char));
-
-    //     fgets(buffer, BUFFER_SIZE, file);
-    //     if (buffer[0] == '\n')
-    //         continue;
-
-    //     index[i++] = my_strdup(buffer);
-
-    //     toxic_free(&buffer);
-    // }
-
-    //fclose(file);
 }
 //-------------------------------------------------------------------------------------------------
 int Add_to_Index(const char** index, const char* big_buffer, size_t count)
@@ -188,24 +172,18 @@ int Add_to_Index(const char** index, const char* big_buffer, size_t count)
 
     size_t i_buf = 0, i_ind = 0;
 
-    //printf("index[%zu] = <%s>\n", i_ind, &big_buffer[i_buf]);
     index[i_ind] = my_strdup(&big_buffer[i_buf]);
 
     for (i_buf = 1, i_ind = 1; i_buf < count; i_buf++)
     {
-        //printf("big_buffer[%zu] = %c\n", i_buf, big_buffer[i_buf]);
-
         if (big_buffer[i_buf] == '\0')
         {
             if (big_buffer[i_buf + 1] == '\0')
                 continue;
             else
-                //printf("index[%zu] = <%s>\n", i_ind, &big_buffer[i_buf + 1]);
                 index[i_ind++] = my_strdup(&big_buffer[i_buf + 1]);
         }
     }
-
-    //printf("%zu v %zu\n", i_buf, count);
 
     return i_ind;
 }
@@ -238,11 +216,14 @@ int WriteSpaces(const char* name, size_t val)
     if (file == NULL)
         return -1;
     
+    fprintf(file, "---------------------------------------------------------------------------------------------------------------------------------------\n");
     while (i < val)
     {
         fputs("\n", file);
         i++;
     }
+    fprintf(file, 
+"---------------------------------------------------------------------------------------------------------------------------------------\n");
 
     fclose(file);
 
