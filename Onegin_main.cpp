@@ -4,7 +4,6 @@
 #include <string.h>
 #include <unistd.h>
 #include <ctype.h>
-#include <assert.h>
 //#include <sys\stat.h>
 //-------------------------------------------------------------------------------------------------
 int ReadFromFile(const char* name, char** index);
@@ -17,6 +16,7 @@ int Compare_to_Initial(const void * ptr_a, const void * ptr_b);
 int QuickSort(void* list, size_t num, size_t size, int (*compare)(const void *, const void *));
 int ChangeValues(char* data, size_t value1, size_t value2, size_t size);
 char *my_strrev(char *str);
+void toxic_free(char** buffer);
 
 //-------------------------------------------------------------------------------------------------
 const size_t BUFFER_SIZE = 1000;
@@ -24,8 +24,8 @@ const size_t MAX_LINES = 10000;
 const size_t SPACE = 10;
 const char FILE_IN[] = "/Users/leonid/Documents/GitHub/mipt_course/Onegin/Onegin.txt";
 const char FILE_OUT[] = "/Users/leonid/Documents/GitHub/mipt_course/Onegin/Res_Onegin.txt";
+const int POISON_VALUE = 13;
 
-//TODO: убрать пустые строки в тексте
 //-------------------------------------------------------------------------------------------------
 int main()
 {
@@ -33,7 +33,6 @@ int main()
     //stat(FILE_IN, &file_info);
     
     char** index = (char**)calloc(MAX_LINES, sizeof(char*));
-    //char* index[MAX_LINES] = {};
     size_t count = ReadFromFile(FILE_IN, index);
 
     //strait sorting//
@@ -57,7 +56,7 @@ int main()
     for (size_t i = 0; i < count; i++)
     {
         index[i] = NULL;
-        free(index[i]);
+        toxic_free(&(index[i]));
     }
 
     return 0;
@@ -90,9 +89,6 @@ int Compare_Straight(const void * ptr_a, const void * ptr_b)
 //-------------------------------------------------------------------------------------------------
 int Compare_Reverse(const void * ptr_a, const void * ptr_b)
 {
-    assert(ptr_a != NULL);
-    assert(ptr_b != NULL);
-
     const char* start_a = *(const char**)(ptr_a);
     const char* start_b = *(const char**)(ptr_b);
 
@@ -144,10 +140,9 @@ int ReadFromFile(const char* name, char** index)
 
     while (!feof(file))
     {
-        //void* calloc(size_t num, size_t size);
+        void* calloc(size_t num, size_t size);
 
-        //char* buffer = (char*)calloc(BUFFER_SIZE, sizeof(char));
-        char buffer[BUFFER_SIZE] = "";
+        char* buffer = (char*)calloc(BUFFER_SIZE, sizeof(char));
 
         fgets(buffer, BUFFER_SIZE, file);
         if (buffer[0] == '\n')
@@ -155,7 +150,7 @@ int ReadFromFile(const char* name, char** index)
 
         index[i++] = my_strdup(buffer);
 
-        //free(buffer);
+        toxic_free(&buffer);
     }
 
     fclose(file);
@@ -174,9 +169,7 @@ int WriteToFile(const char* name, const char** index, size_t count, const char* 
 
     while (i < count)
     {
-        //printf("%s\n", index[i]);
         fputs((index[i++]), file);
-        //fprintf(file, "\n");
     }
 
     fclose(file);
@@ -214,7 +207,6 @@ char *my_strdup(const char *s)
     }
     ptr[i] = s[i];
 
-    //printf("%s", ptr);
     return ptr;
 }
 //---------------------------------------------------------------------------------
@@ -275,4 +267,10 @@ char *my_strrev(char *str)
     }
 
     return &str[0];
+}
+//---------------------------------------------------------------------------------
+void toxic_free(char** buffer)
+{
+    free(*buffer);
+    *buffer = (char*) POISON_VALUE;
 }
