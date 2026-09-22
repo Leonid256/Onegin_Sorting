@@ -4,9 +4,10 @@
 #include <string.h>
 #include <unistd.h>
 #include <ctype.h>
-//#include <sys\stat.h>
+#include <sys/stat.h>
 //-------------------------------------------------------------------------------------------------
-int ReadFromFile(const char* name, char** index);
+int ReadFromFile(const char* , char* , struct stat file_info);
+int Add_to_Index(const char** index, const char* big_buffer, size_t count);
 int WriteToFile(const char* name, const char** index, size_t count, const char* mode);
 int WriteSpaces(const char* name, size_t val);
 char *my_strdup(const char *s);
@@ -29,11 +30,18 @@ const int POISON_VALUE = 13;
 //-------------------------------------------------------------------------------------------------
 int main()
 {
-    //struct stat file_info;
-    //stat(FILE_IN, &file_info);
-    
-    char** index = (char**)calloc(MAX_LINES, sizeof(char*));
-    size_t count = ReadFromFile(FILE_IN, index);
+    struct stat file_info;
+    stat(FILE_IN, &file_info);
+
+    size_t count = file_info.st_size / sizeof(char);
+
+    char* big_buffer = (char*) calloc(file_info.st_size / sizeof(char) + 1, sizeof(char));  //buffer for fread
+    size_t strings = ReadFromFile(FILE_IN, big_buffer, file_info);
+    //printf("%zu\n", count);
+
+    char** index = (char**)calloc(strings, sizeof(char*));
+    count = Add_to_Index((const char**)index, (const char*)big_buffer, count);
+    //TODO: func to index from fread
 
     //strait sorting//
     qsort(index, count, sizeof(char*), Compare_Straight);
@@ -42,7 +50,7 @@ int main()
     WriteSpaces(FILE_OUT, SPACE);
     
     
-    // reverse sorting//
+    //reverse sorting//
     QuickSort(index, count, sizeof(char*), Compare_Reverse);
     WriteToFile(FILE_OUT, (const char**)index, count, "a");
 
@@ -58,6 +66,8 @@ int main()
         index[i] = NULL;
         toxic_free(&(index[i]));
     }
+
+    toxic_free(&big_buffer);
 
     return 0;
 }
@@ -130,32 +140,74 @@ int Compare_to_Initial(const void * ptr_a, const void * ptr_b)
     return 0;
 }
 //-------------------------------------------------------------------------------------------------
-int ReadFromFile(const char* name, char** index)
+int ReadFromFile(const char* name, char* big_buffer, struct stat file_info)
 {
     FILE* file = fopen (name, "r");
-    size_t i = 0;
+    size_t strings = 0;
 
     if (file == NULL)
         return -1;
 
-    while (!feof(file))
-    {
-        void* calloc(size_t num, size_t size);
+    size_t file_len = fread((void*) big_buffer, sizeof(char), file_info.st_size / sizeof(char), file);
 
-        char* buffer = (char*)calloc(BUFFER_SIZE, sizeof(char));
-
-        fgets(buffer, BUFFER_SIZE, file);
-        if (buffer[0] == '\n')
-            continue;
-
-        index[i++] = my_strdup(buffer);
-
-        toxic_free(&buffer);
-    }
-
+    //printf("buffer = <%s>\n", big_buffer);
     fclose(file);
 
-    return i;
+    char* buffer = (char*) big_buffer;
+    for (size_t i = 0; i < file_len; i++)
+    {
+        if (buffer[i] == '\n')
+        {
+            buffer[i] = '\0';
+            strings++;
+        }
+    }
+
+    return strings;
+
+    // while (!feof(file))
+    // {
+    //     char* buffer = (char*)calloc(BUFFER_SIZE, sizeof(char));
+
+    //     fgets(buffer, BUFFER_SIZE, file);
+    //     if (buffer[0] == '\n')
+    //         continue;
+
+    //     index[i++] = my_strdup(buffer);
+
+    //     toxic_free(&buffer);
+    // }
+
+    //fclose(file);
+}
+//-------------------------------------------------------------------------------------------------
+int Add_to_Index(const char** index, const char* big_buffer, size_t count)
+{
+    if (index == NULL || big_buffer == NULL)
+        return -1;
+
+    size_t i_buf = 0, i_ind = 0;
+
+    //printf("index[%zu] = <%s>\n", i_ind, &big_buffer[i_buf]);
+    index[i_ind] = my_strdup(&big_buffer[i_buf]);
+
+    for (i_buf = 1, i_ind = 1; i_buf < count; i_buf++)
+    {
+        //printf("big_buffer[%zu] = %c\n", i_buf, big_buffer[i_buf]);
+
+        if (big_buffer[i_buf] == '\0')
+        {
+            if (big_buffer[i_buf + 1] == '\0')
+                continue;
+            else
+                //printf("index[%zu] = <%s>\n", i_ind, &big_buffer[i_buf + 1]);
+                index[i_ind++] = my_strdup(&big_buffer[i_buf + 1]);
+        }
+    }
+
+    //printf("%zu v %zu\n", i_buf, count);
+
+    return i_ind;
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -170,6 +222,7 @@ int WriteToFile(const char* name, const char** index, size_t count, const char* 
     while (i < count)
     {
         fputs((index[i++]), file);
+        fprintf(file, "\n");
     }
 
     fclose(file);
